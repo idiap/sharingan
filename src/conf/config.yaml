@@ -1,0 +1,148 @@
+# ==================================================================================================================== #
+#                                                EXPERIMENT CONFIGURATION                                              # 
+# ==================================================================================================================== #
+
+
+project:
+    name: sharingan # name of the wandb project
+    version: 1.0.0
+    description: Sharingan - Transformer architecture for multi-person gaze following.
+
+# ------------------------------------------------------------------------------------------------------------------- #
+
+experiment:
+    name: run-name # name of the wandb job
+    group: null # name of the wandb group
+    task: train+test # combination of {train, val, test} separated by '+' sign
+    dataset: gazefollow # gazefollow, videoattentiontarget, childplay
+    path: ${hydra:runtime.cwd} # to retrieve logs and checkpoints
+
+# ------------------------------------------------------------------------------------------------------------------- #
+
+data:
+    num_people: 2 # int or -1 to include all people
+    return_head_mask: False
+    image_size: 224
+    heatmap_size: 64
+    heatmap_sigma: 3
+    stride: 1 # temporal stride for video datasets
+    gf:
+        root: </path/to>/gazefollow_extended
+        root_annotations: </path/to/folder/with/annotations>
+        root_heads: </path/to>/GazeFollow-head
+        num_train_samples: 108955
+    vat:
+        root: </path/to>/VideoAttentionTarget
+        root_heads: </path/to>/VideoAttentionTarget-head/images
+        num_train_samples: 125837
+    cp:
+        root: </path/to>/ChildPlay
+        root_heads: </path/to>/ChildPlay-head/images
+        num_train_samples: 192220
+
+
+# ------------------------------------------------------------------------------------------------------------------- #
+
+model:
+    sharingan:
+        patch_size: 16
+        token_dim: 768
+        image_size: ${data.image_size}
+        gaze_feature_dim: 512
+        encoder_depth: 12
+        encoder_num_heads: 12
+        encoder_num_global_tokens: 0
+        encoder_mlp_ratio: 4.0
+        encoder_use_qkv_bias: True
+        encoder_drop_rate: 0.0
+        encoder_attn_drop_rate: 0.0
+        encoder_drop_path_rate: 0.0
+        decoder_feature_dim: 128
+        decoder_hooks: [2, 5, 8, 11]
+        decoder_hidden_dims: [48, 96, 192, 384]
+        decoder_use_bn: True
+    pretraining:
+        gaze360: </path/to>/sharingan/weights/gaze360_resnet18.pt
+        multivit: /</path/to>/sharingan/weights/multimae-b_98_rgb+-depth-semseg_1600e_multivit-afff3f8c.pth
+    weights: null # /!\ null (default), or path to a checkpoint (overrides pretraining weights)
+
+# ------------------------------------------------------------------------------------------------------------------- #
+
+loss:
+    weight_heatmap: 1000
+    weight_angular: 3
+    weight_bce: 0
+
+# ------------------------------------------------------------------------------------------------------------------- #
+
+optimizer:
+    lr:
+        base: 1e-4
+        gaze_encoder: 0.
+        image_tokenizer: 0.
+        vit_encoder: 0.
+        gaze_decoder: 0.
+        inout_decoder: 0.
+    weight_decay: 1e-3 # /!\
+
+# ------------------------------------------------------------------------------------------------------------------- #
+
+scheduler:
+    type: cosine_warmup # cosine_warmup (default), null (no scheduler)
+    warmup_epochs: 4
+
+# ------------------------------------------------------------------------------------------------------------------- #
+
+train: 
+    seed: 5 # int or null for no seed
+    matmul_precision: highest # highest (default), high, medium
+    precision: 32 # 64 (double), 32 (full), 16 (16bit mixed), bf16-mixed (bfloat16 mixed). Defaults to 32.
+    epochs: 20
+    batch_size: 48
+    accumulate_grad_batches: 1 # 1 (default, no accumulation)
+    device: cuda
+    resume: False 
+    resume_from: null 
+    checkpointing:
+        monitor: "metric/val/dist" # "metric/val/dist" (default), "metric/val/ap", "loss/val"
+        mode: "min" # "min" (default), "max"
+    freeze:
+        gaze_encoder: False 
+        image_tokenizer: False
+        vit_encoder: False
+        gaze_decoder: False
+        inout_decoder: False
+    swa:
+        use: True
+        lr: 3e-5
+        epoch_start: 11
+        annealing_epochs: 8
+
+# ------------------------------------------------------------------------------------------------------------------- #
+
+val: 
+    checkpoint: null
+    batch_size: 1
+    device: ${train.device}
+
+# ------------------------------------------------------------------------------------------------------------------- #
+
+test:
+    checkpoint: null
+    batch_size: 1
+    device: ${train.device}
+
+# ------------------------------------------------------------------------------------------------------------------- #
+
+wandb:
+    log: True
+    watch: null # /!\ null, gradients, parameters, all
+    watch_freq: 500
+
+# ------------------------------------------------------------------------------------------------------------------- #
+
+hydra: 
+    run: 
+        dir: ./
+    job: 
+        chdir: True

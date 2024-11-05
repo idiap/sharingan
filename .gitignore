@@ -1,0 +1,25 @@
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store/
+
+# Data
+data/childplay-head.zip
+data/gazefollow-head.zip
+data/videoattentiontarget-head.zip
+weights/*
+!weights/
+checkpoints/*
+!checkpoints/
+
+# Project
+__pycache__/
+main.log
+*.csv
+experiments/*
+!experiments/
+lightning_logs/
+wandb/
+.hydra/
+.vscode/
