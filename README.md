@@ -1,9 +1,7 @@
 # Sharingan: A Transformer Architecture for Multi-Person Gaze Following
 
-<div style="display: flex; justify-content: space-between;">
-  <img src="./assets/demo-video-1.gif" alt="Demo 1" style="width: 45%;"/>
-  <img src="./assets/demo-video-2.gif" alt="Demo 2" style="width: 45%;"/>
-</div>
+| ![Demo 1](./assets/demo-video-1.gif) | ![Demo 2](./assets/demo-video-2.gif) |
+|--------------------------------------|--------------------------------------|
 
 ## Overview
 
