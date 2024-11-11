@@ -272,6 +272,8 @@ def spatial_argmax2d(heatmap, normalize=True):
         points = remove_duplicate_max(points)
         points = points[:, 1:].flip(1)  # (idx, y, x) -> (x, y)
 
+        # NOTE: The +1 is to account for the zero-based indexing. 
+        # It's not necessary, and removing it improves performance a bit.
         if normalize:
             points = (points + 1) / torch.tensor(heatmap.size()[1:]).to(heatmap.device)
 
